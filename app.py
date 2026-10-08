@@ -69,7 +69,7 @@ def get_students():
 def get_student(student_id):
     connection=get_connection()
     cursor=connection.cursor()
-    cursor.execute("SELECT * FROM students WHERE id=?",(student_id))
+    cursor.execute("SELECT * FROM students WHERE id=?",(student_id,))
     student=cursor.fetchone()
     connection.close()
     if student is None:
@@ -83,6 +83,57 @@ def get_student(student_id):
         "age":student["age"],
         "course":student["course"]
     })
+
+# GET STUDENT BY NAME
+@app.route("/students/search",methods=["GET"])
+def search_student():
+    name=request.args.get("name")
+    if not name:
+        return jsonify({
+            "Error":"Name query parameter is required"
+        }),400
+    connection=get_connection()
+    cursor=connection.cursor()
+    cursor.execute("SELECT * FROM students WHERE name LIKE ?",("%"+name+"%",))
+    students=cursor.fetchall()
+    connection.close()
+    if not students:
+        return jsonify({
+            "Error":"No students found with the given name"
+        }),404
+    student_list=[]
+    for student in students:
+        student_list.append({
+            "id":student["id"],
+            "name":student["name"],
+            "email":student["email"],
+            "age":student["age"],
+            "course":student["course"]
+        })
+    return jsonify(student_list)
+
+# FILTER STUDENTS BY COURSE
+@app.route("/students/course/<string:course>",methods=["GET"])
+def get_students_by_course(course):
+    connection=get_connection()
+    cursor=connection.cursor()
+    cursor.execute("SELECT * FROM students WHERE course=?",(course,))
+    students=cursor.fetchall()
+    connection.close()
+    if not students:
+        return jsonify({
+            "Error":"No students found for the given course"
+        }),404
+    student_list=[]
+    for student in students:
+        student_list.append({
+            "id":student["id"],
+            "name":student["name"],
+            "email":student["email"],
+            "age":student["age"],
+            "course":student["course"]
+        })
+    return jsonify(student_list)
 
 # UPDATE STUDENT
 @app.route("/students/<int:student_id>",methods=["PUT"])
@@ -106,7 +157,7 @@ def update_student(student_id):
 
     try:
         cursor=connection.cursor()
-        cursor.execute("SELECT * FROM student WHERE id=?",(student_id))
+        cursor.execute("SELECT * FROM student WHERE id=?",(student_id,))
         student=cursor.fetchone()
         if student is None:
             connection.close()
