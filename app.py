@@ -27,6 +27,11 @@ def add_student():
         return jsonify({
             "error":"name,email,age and course are required"
         }),400
+    # Validate age
+    if not isinstance(age,int) or age<=0:
+        return jsonify({
+            "Error":"Age must be a positive number"
+        }),400
     connection=get_connection()
     try:
         cursor=connection.cursor()
